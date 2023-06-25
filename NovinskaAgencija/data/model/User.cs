@@ -18,6 +18,7 @@
         public string? ForgotPasswordToken { get; set; } = string.Empty;
         public Role Role { get; set; }
         public string StateOfOrigin { get; set; } = string.Empty;
-        public string JurassicAccount { get; set; } = string.Empty;        
+        public string JurassicAccount { get; set; } = string.Empty;
+        public ICollection<Placanje> Placanja { get; set; }
     }
 }

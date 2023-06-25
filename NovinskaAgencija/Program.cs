@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using NovinskaAgencija;
+using NovinskaAgencija.services.ArticleService;
 using NovinskaAgencija.services.AuthService;
 using NovinskaAgencija.services.JWTService;
 using NovinskaAgencija.services.UserService;
@@ -26,6 +27,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IArticleService, ArticleService>();
 
 //registering http context accessor
 builder.Services.AddHttpContextAccessor();

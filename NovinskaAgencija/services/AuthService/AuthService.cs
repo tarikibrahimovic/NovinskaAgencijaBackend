@@ -142,14 +142,24 @@ namespace NovinskaAgencija.services.AuthService
                     return new BadRequestObjectResult(new {error = "Wrong password" });
                 }
                 if(user.VerificationToken != null)
-            {
-                    
+                {
+                return new OkObjectResult(new LoginReporterResponse
+                {
+                    Username = user.Username,
+                    Email = user.Email,
+                    Role = user.Role,
+                    StateOfOrigin = user.StateOfOrigin,
+                    JurassicAccount = user.JurassicAccount,
+                    IsVerified = verified
+                });
                 }
                 string token = _jwtService.CreateToken(user);
-                if(user.Role == Role.Reporter)
+            var placanje = context.Placanja.Where(p => p.User == user).ToList();
+            if (user.Role == Role.Reporter)
                 {
                     Reporter reporter = context.Reporteri.Where(r => r.User == user).FirstOrDefault();
-                    var clanci = context.ReporterClanak.Where(rc => rc.Reporter == reporter).ToList();
+                //var clanci = context.ReporterClanak.Where(rc => rc.Reporter == reporter).ToList();
+                var clanci = context.Clanci.Where(c => c.ReporterId == reporter.Id).ToList();
                     return new OkObjectResult(new LoginReporterResponse
                     {
                         Username = user.Username,
@@ -161,20 +171,20 @@ namespace NovinskaAgencija.services.AuthService
                         ReporterClanci = clanci,
                         Ime = reporter.Ime,
                         Prezime = reporter.Prezime,
-                        IsVerified = verified
+                        IsVerified = verified,
+                        Placanja = placanje
                     });
                 }
                 if(user.Role == Role.Client)
                 {
                     Klijent klijent = context.Klijenti.Where(k => k.User == user).FirstOrDefault();
-                    var placanja = context.Placanja.Where(p => p.Klijent == klijent).ToList();
                     return new OkObjectResult(new LoginKlijentResponse
                     {
                         Username = user.Username,
                         Email = user.Email,
                         Token = token,
                         Role = user.Role,
-                        Placanje = placanja,
+                        Placanje = placanje,
                         StateOfOrigin = user.StateOfOrigin,
                         JurassicAccount = user.JurassicAccount,
                         NazivKompanije = klijent.NazivKompanije,
@@ -207,7 +217,44 @@ namespace NovinskaAgencija.services.AuthService
             user.VerificationToken = null;
             context.SaveChanges();
 
-            return new OkObjectResult(new {message = "User verified" });
+            string token = _jwtService.CreateToken(user);
+            var placanje = context.Placanja.Where(p => p.User == user).ToList();
+            if (user.Role == Role.Reporter)
+            {
+                Reporter reporter = context.Reporteri.Where(r => r.User == user).FirstOrDefault();
+                var clanci = context.Clanci.Where(c => c.ReporterId == reporter.Id).ToList();
+                return new OkObjectResult(new LoginReporterResponse
+                {
+                    Username = user.Username,
+                    Email = user.Email,
+                    Token = token,
+                    Role = user.Role,
+                    StateOfOrigin = user.StateOfOrigin,
+                    JurassicAccount = user.JurassicAccount,
+                    ReporterClanci = clanci,
+                    Ime = reporter.Ime,
+                    Prezime = reporter.Prezime,
+                    IsVerified = true,
+                    Placanja = placanje
+                });
+            }
+            else
+            {
+                Klijent klijent = context.Klijenti.Where(k => k.User == user).FirstOrDefault();
+                return new OkObjectResult(new LoginKlijentResponse
+                {
+                    Username = user.Username,
+                    Email = user.Email,
+                    Token = token,
+                    Role = user.Role,
+                    Placanje = placanje,
+                    StateOfOrigin = user.StateOfOrigin,
+                    JurassicAccount = user.JurassicAccount,
+                    NazivKompanije = klijent.NazivKompanije,
+                    TipPreduzeca = klijent.TipPreduzeca,
+                    IsVerified = true
+                });
+            }
         }
 
         public IActionResult ForgotPassword(ForgotPasswordRequest request)
@@ -223,7 +270,7 @@ namespace NovinskaAgencija.services.AuthService
 
             context.SaveChanges();
 
-            SendEmail(request.Email, "Your ForgotPassword Token is: " + random.ToString());
+            SendEmail(request.Email, "Your ForgotPassword Token is: " + randomNumber.ToString());
 
             return new OkObjectResult(new { message = "ForgotPassword token sent" });
         }

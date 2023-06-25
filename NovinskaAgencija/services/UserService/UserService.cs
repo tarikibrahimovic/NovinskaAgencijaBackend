@@ -188,10 +188,12 @@ namespace NovinskaAgencija.services.UserService
                 return new BadRequestObjectResult(new { error = "User not found" });
             }
             var token = jwtService.CreateToken(user);
+            List<Placanje> placanja = user.Placanja.ToList();
             if(user.Role == data.model.Role.Reporter)
             {
                 Reporter reporter = context.Reporteri.Where(r => r.User == user).FirstOrDefault();
-                var clanci = context.ReporterClanak.Where(rc => rc.Reporter == reporter).ToList();
+                //var clanci = context.ReporterClanak.Where(rc => rc.Reporter == reporter).ToList();
+                var clanci = context.Clanci.Where(c => c.ReporterId == reporter.Id).ToList();
                 return new OkObjectResult(new LoginReporterResponse
                 {
                     Username = user.Username,
@@ -203,13 +205,13 @@ namespace NovinskaAgencija.services.UserService
                     ReporterClanci = clanci,
                     Ime = reporter.Ime,
                     Prezime = reporter.Prezime,
-                    IsVerified = user.VerificationToken == null ? true : false
+                    IsVerified = user.VerificationToken == null ? true : false,
+                    Placanja = placanja,
                 });
             }
             else
             {
                 Klijent klijent = context.Klijenti.Where(k => k.User == user).FirstOrDefault();
-                var placanja = context.Placanja.Where(p => p.Klijent == klijent).ToList();
                 return new OkObjectResult(new LoginKlijentResponse
                 {
                     Username = user.Username,

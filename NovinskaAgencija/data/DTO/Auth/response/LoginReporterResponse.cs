@@ -10,7 +10,8 @@ namespace NovinskaAgencija.data.DTO.Auth.response
         public Role Role { get; set; }
         public string StateOfOrigin { get; set; } = string.Empty;
         public string JurassicAccount { get; set; } = string.Empty;
-        public ICollection<ReporterClanak> ReporterClanci { get; set; }
+        public ICollection<Clanak> ReporterClanci { get; set; }
+        public ICollection<Placanje> Placanja { get; set; }
         public string Token { get; set; } = string.Empty;
         public string Ime { get; set; } = string.Empty;
         public string Prezime { get; set; } = string.Empty;

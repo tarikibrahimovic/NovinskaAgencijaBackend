@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="data\DTO\User\response\" />
+    <Folder Include="data\DTO\Article\response\" />
   </ItemGroup>
 
 </Project>

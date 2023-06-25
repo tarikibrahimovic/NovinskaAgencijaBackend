@@ -7,6 +7,5 @@
         public User User { get; set; }
         public string NazivKompanije { get; set; } = string.Empty;
         public string TipPreduzeca { get; set; } = string.Empty;
-        public ICollection<Placanje> Placanja { get; set; }
     }
 }

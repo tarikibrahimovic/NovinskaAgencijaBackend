@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NovinskaAgencija;
 
@@ -11,9 +12,11 @@ using NovinskaAgencija;
 namespace NovinskaAgencija.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20230625200343_userPlacanja")]
+    partial class userPlacanja
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -43,14 +46,8 @@ namespace NovinskaAgencija.Migrations
                     b.Property<string>("ImageUrl")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("OblastId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("PublishDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("ReporterId")
-                        .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -58,11 +55,30 @@ namespace NovinskaAgencija.Migrations
 
                     b.HasKey("Id");
 
+                    b.ToTable("Clanci");
+                });
+
+            modelBuilder.Entity("NovinskaAgencija.data.model.ClanakOblast", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClanakId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OblastId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClanakId");
+
                     b.HasIndex("OblastId");
 
-                    b.HasIndex("ReporterId");
-
-                    b.ToTable("Clanci");
+                    b.ToTable("ClanakOblast");
                 });
 
             modelBuilder.Entity("NovinskaAgencija.data.model.Klijent", b =>
@@ -203,6 +219,29 @@ namespace NovinskaAgencija.Migrations
                     b.ToTable("Reporteri");
                 });
 
+            modelBuilder.Entity("NovinskaAgencija.data.model.ReporterClanak", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClanakId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ReporterId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClanakId");
+
+                    b.HasIndex("ReporterId");
+
+                    b.ToTable("ReporterClanak");
+                });
+
             modelBuilder.Entity("NovinskaAgencija.data.model.User", b =>
                 {
                     b.Property<int>("Id")
@@ -250,23 +289,23 @@ namespace NovinskaAgencija.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("NovinskaAgencija.data.model.Clanak", b =>
+            modelBuilder.Entity("NovinskaAgencija.data.model.ClanakOblast", b =>
                 {
+                    b.HasOne("NovinskaAgencija.data.model.Clanak", "Clanak")
+                        .WithMany("ClanakOblasti")
+                        .HasForeignKey("ClanakId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("NovinskaAgencija.data.model.Oblast", "Oblast")
-                        .WithMany("Clanci")
+                        .WithMany("ClanakOblasti")
                         .HasForeignKey("OblastId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("NovinskaAgencija.data.model.Reporter", "Reporter")
-                        .WithMany("Clanak")
-                        .HasForeignKey("ReporterId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                    b.Navigation("Clanak");
 
                     b.Navigation("Oblast");
-
-                    b.Navigation("Reporter");
                 });
 
             modelBuilder.Entity("NovinskaAgencija.data.model.Klijent", b =>
@@ -310,20 +349,43 @@ namespace NovinskaAgencija.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("NovinskaAgencija.data.model.ReporterClanak", b =>
+                {
+                    b.HasOne("NovinskaAgencija.data.model.Clanak", "Clanak")
+                        .WithMany("ReporterClanak")
+                        .HasForeignKey("ClanakId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("NovinskaAgencija.data.model.Reporter", "Reporter")
+                        .WithMany("ReporterClanak")
+                        .HasForeignKey("ReporterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Clanak");
+
+                    b.Navigation("Reporter");
+                });
+
             modelBuilder.Entity("NovinskaAgencija.data.model.Clanak", b =>
                 {
+                    b.Navigation("ClanakOblasti");
+
                     b.Navigation("Placanje")
                         .IsRequired();
+
+                    b.Navigation("ReporterClanak");
                 });
 
             modelBuilder.Entity("NovinskaAgencija.data.model.Oblast", b =>
                 {
-                    b.Navigation("Clanci");
+                    b.Navigation("ClanakOblasti");
                 });
 
             modelBuilder.Entity("NovinskaAgencija.data.model.Reporter", b =>
                 {
-                    b.Navigation("Clanak");
+                    b.Navigation("ReporterClanak");
                 });
 
             modelBuilder.Entity("NovinskaAgencija.data.model.User", b =>

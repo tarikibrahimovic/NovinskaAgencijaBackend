@@ -4,6 +4,7 @@
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        public ICollection<ClanakOblast> ClanakOblasti { get; set; }
+        //public ICollection<ClanakOblast> ClanakOblasti { get; set; }
+        public ICollection<Clanak> Clanci { get; set; }
     }
 }
