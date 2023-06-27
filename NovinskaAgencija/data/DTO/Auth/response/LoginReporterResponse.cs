@@ -1,4 +1,5 @@
-﻿using NovinskaAgencija.data.model;
+﻿using NovinskaAgencija.data.DTO.Article.response;
+using NovinskaAgencija.data.model;
 
 namespace NovinskaAgencija.data.DTO.Auth.response
 {
@@ -10,7 +11,7 @@ namespace NovinskaAgencija.data.DTO.Auth.response
         public Role Role { get; set; }
         public string StateOfOrigin { get; set; } = string.Empty;
         public string JurassicAccount { get; set; } = string.Empty;
-        public ICollection<Clanak> ReporterClanci { get; set; }
+        public List<ArticleResponse> Clanci { get; set; }
         public ICollection<Placanje> Placanja { get; set; }
         public string Token { get; set; } = string.Empty;
         public string Ime { get; set; } = string.Empty;

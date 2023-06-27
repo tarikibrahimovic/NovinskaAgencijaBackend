@@ -4,8 +4,8 @@
     {
         public string Title { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
-        public int Price { get; set; }
-        public int CategoryId { get; set; }
+        public string Price { get; set; } = string.Empty;
+        public string CategoryId { get; set; } = string.Empty;
         public IFormFile? Image { get; set; }
         public IFormFile? File { get; set; }
     }

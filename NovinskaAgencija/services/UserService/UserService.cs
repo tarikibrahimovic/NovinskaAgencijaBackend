@@ -13,6 +13,7 @@ using NovinskaAgencija.data.DTO.Auth.response;
 using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Crypto;
 using NovinskaAgencija.services.JWTService;
+using NovinskaAgencija.data.DTO.Article.response;
 
 namespace NovinskaAgencija.services.UserService
 {
@@ -181,50 +182,98 @@ namespace NovinskaAgencija.services.UserService
 
         public IActionResult RefreshToken()
         {
-            int userId = int.Parse(_acc.HttpContext.User.FindFirstValue(ClaimTypes.PrimarySid));
-            User user = context.Users.FirstOrDefault(u => u.Id == userId);
-            if (user == null)
+            try
             {
-                return new BadRequestObjectResult(new { error = "User not found" });
-            }
-            var token = jwtService.CreateToken(user);
-            List<Placanje> placanja = user.Placanja.ToList();
-            if(user.Role == data.model.Role.Reporter)
-            {
-                Reporter reporter = context.Reporteri.Where(r => r.User == user).FirstOrDefault();
-                //var clanci = context.ReporterClanak.Where(rc => rc.Reporter == reporter).ToList();
-                var clanci = context.Clanci.Where(c => c.ReporterId == reporter.Id).ToList();
-                return new OkObjectResult(new LoginReporterResponse
+                int userId = int.Parse(_acc.HttpContext.User.FindFirstValue(ClaimTypes.PrimarySid));
+                User user = context.Users.Where(u => u.Id == userId).FirstOrDefault();
+                bool verified = user.VerificationToken != null ? false : true;
+                if (user == null)
                 {
-                    Username = user.Username,
-                    Email = user.Email,
-                    Token = token,
-                    Role = user.Role,
-                    StateOfOrigin = user.StateOfOrigin,
-                    JurassicAccount = user.JurassicAccount,
-                    ReporterClanci = clanci,
-                    Ime = reporter.Ime,
-                    Prezime = reporter.Prezime,
-                    IsVerified = user.VerificationToken == null ? true : false,
-                    Placanja = placanja,
-                });
-            }
-            else
-            {
-                Klijent klijent = context.Klijenti.Where(k => k.User == user).FirstOrDefault();
-                return new OkObjectResult(new LoginKlijentResponse
+                    return new BadRequestObjectResult(new { error = "User with this email doesn't exist" });
+                }
+                string token = jwtService.CreateToken(user);
+                var placanje = context.Placanja.Where(p => p.User == user).ToList();
+                if (user.Role == data.model.Role.Reporter)
                 {
-                    Username = user.Username,
-                    Email = user.Email,
-                    Token = token,
-                    Role = user.Role,
-                    Placanje = placanja,
-                    StateOfOrigin = user.StateOfOrigin,
-                    JurassicAccount = user.JurassicAccount,
-                    NazivKompanije = klijent.NazivKompanije,
-                    TipPreduzeca = klijent.TipPreduzeca,
-                    IsVerified = user.VerificationToken == null ? true : false
-                });
+                    Reporter reporter = context.Reporteri.Where(r => r.User == user).FirstOrDefault();
+                    //var clanci = context.ReporterClanak.Where(rc => rc.Reporter == reporter).ToList();
+                    var article = context.Clanci.Include(c => c.Oblast).Include(c => c.Reporter).Select(c => new
+                    {
+                        c.Oblast.Name,
+                        c.Title,
+                        c.Content,
+                        c.Cena,
+                        c.PublishDate,
+                        c.ImageUrl,
+                        c.FileUrl,
+                        c.Reporter.Id,
+                        c.Reporter.Ime,
+                        c.Reporter.Prezime,
+                    }).ToList();
+
+                    List<ArticleResponse> articles = new List<ArticleResponse>();
+
+                    if (article != null)
+                    {
+                        foreach (var item in article)
+                        {
+                            articles.Add(new ArticleResponse
+                            {
+                                OblastName = item.Name,
+                                Title = item.Title,
+                                Content = item.Content,
+                                Cena = item.Cena,
+                                PublishDate = item.PublishDate,
+                                ImageUrl = item.ImageUrl,
+                                FileUrl = item.FileUrl,
+                                ReporterId = item.Id,
+                                ReporterIme = item.Ime,
+                                ReporterPrezime = item.Prezime
+                            });
+                        }
+                    }
+                    else
+                    {
+                        articles = null;
+                    }
+                    return new OkObjectResult(new LoginReporterResponse
+                    {
+                        Username = user.Username,
+                        Email = user.Email,
+                        Token = token,
+                        Role = user.Role,
+                        StateOfOrigin = user.StateOfOrigin,
+                        JurassicAccount = user.JurassicAccount,
+                        Clanci = articles,
+                        Ime = reporter.Ime,
+                        Prezime = reporter.Prezime,
+                        IsVerified = verified,
+                        Placanja = placanje
+                    });
+                }
+                if (user.Role == data.model.Role.Client)
+                {
+                    Klijent klijent = context.Klijenti.Where(k => k.User == user).FirstOrDefault();
+                    return new OkObjectResult(new LoginKlijentResponse
+                    {
+                        Username = user.Username,
+                        Email = user.Email,
+                        Token = token,
+                        Role = user.Role,
+                        Placanje = placanje,
+                        StateOfOrigin = user.StateOfOrigin,
+                        JurassicAccount = user.JurassicAccount,
+                        NazivKompanije = klijent.NazivKompanije,
+                        TipPreduzeca = klijent.TipPreduzeca,
+                        IsVerified = verified
+                    });
+                }
+                return new BadRequestObjectResult(new { error = "Wrong role" });
+            }
+            catch (Exception ex)
+            {
+
+                return new BadRequestObjectResult(new { error = ex.Message });
             }
 
         }

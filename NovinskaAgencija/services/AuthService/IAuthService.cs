@@ -12,5 +12,6 @@ namespace NovinskaAgencija.services.AuthService
         public IActionResult ForgotPassword(ForgotPasswordRequest request);
         public IActionResult ResetPassword(ResetPasswordRequest request);
         public IActionResult ResendVerificationEmail(ForgotPasswordRequest request);
+        public void SendEmail(string email, string body);
     }
 }

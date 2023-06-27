@@ -32,20 +32,78 @@ namespace NovinskaAgencija.Controllers
             }
         }
 
-        //[HttpPost("addFile")]
-        //public IActionResult AddFile([FromForm] AddArticleRequest request)
-        //{
-        //    try
-        //    {
-        //        var response = service.UploadFile(request);
-        //        return response;
-        //    }
-        //    catch (Exception)
-        //    {
+        [AllowAnonymous]
+        [HttpGet("articles")]
+        public IActionResult GetArticles()
+        {
+            try
+            {
+                var response = service.GetArticles();
+                return response;
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Greska na serveru");
+            }
+        }
 
-        //        return StatusCode(StatusCodes.Status500InternalServerError, "Greska na serveru");
-        //    }
-        //}
+        [HttpDelete("deleteArticle/{articleId}/{userId}")]
+        public IActionResult DeleteArticle(int articleId, int userId)
+        {
+            try
+            {
+                var response = service.DeleteArticle(articleId, userId);
+                return response;
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Greska na serveru");
+            }
+        }
 
+        [HttpPost("buyArticle")]
+        public IActionResult BuyArticle([FromBody] BuyArticleRequest request)
+        {
+            try
+            {
+                var response = service.BuyArticle(request);
+                return response;
+            }
+            catch (Exception)
+            {
+
+                return StatusCode(StatusCodes.Status500InternalServerError, "Greska na serveru");
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpGet("reporters")]
+        public IActionResult GetReporters()
+        {
+            try
+            {
+                var response = service.GetReporters();
+                return response;
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Greska na serveru");
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpGet("getArticle/{articleId}")]
+        public IActionResult GetArticle(int articleId)
+        {
+            try
+            {
+                var response = service.GetArticle(articleId);
+                return response;
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Greska na serveru");
+            }
+        }
     }
 }

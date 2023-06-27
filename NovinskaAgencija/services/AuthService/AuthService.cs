@@ -1,9 +1,11 @@
 ﻿using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using MimeKit;
 using MimeKit.Text;
 using Newtonsoft.Json.Linq;
 using NovinskaAgencija.data.DTO;
+using NovinskaAgencija.data.DTO.Article.response;
 using NovinskaAgencija.data.DTO.Auth.request;
 using NovinskaAgencija.data.DTO.Auth.response;
 using NovinskaAgencija.data.model;
@@ -159,8 +161,46 @@ namespace NovinskaAgencija.services.AuthService
                 {
                     Reporter reporter = context.Reporteri.Where(r => r.User == user).FirstOrDefault();
                 //var clanci = context.ReporterClanak.Where(rc => rc.Reporter == reporter).ToList();
-                var clanci = context.Clanci.Where(c => c.ReporterId == reporter.Id).ToList();
-                    return new OkObjectResult(new LoginReporterResponse
+                var article = context.Clanci.Include(c => c.Oblast).Include(c => c.Reporter).Select(c => new
+                {
+                    c.Oblast.Name,
+                    c.Title,
+                    c.Content,
+                    c.Cena,
+                    c.PublishDate,
+                    c.ImageUrl,
+                    c.FileUrl,
+                    c.Reporter.Id,
+                    c.Reporter.Ime,
+                    c.Reporter.Prezime,
+                }).ToList();
+
+                List<ArticleResponse> articles = new List<ArticleResponse>();
+
+                if (article != null)
+                {
+                    foreach (var item in article)
+                    {
+                        articles.Add(new ArticleResponse
+                        {
+                            OblastName = item.Name,
+                            Title = item.Title,
+                            Content = item.Content,
+                            Cena = item.Cena,
+                            PublishDate = item.PublishDate,
+                            ImageUrl = item.ImageUrl,
+                            FileUrl = item.FileUrl,
+                            ReporterId = item.Id,
+                            ReporterIme = item.Ime,
+                            ReporterPrezime = item.Prezime
+                        });
+                    }
+                }
+                else
+                {
+                    articles = null;
+                }
+                return new OkObjectResult(new LoginReporterResponse
                     {
                         Username = user.Username,
                         Email = user.Email,
@@ -168,7 +208,7 @@ namespace NovinskaAgencija.services.AuthService
                         Role = user.Role,
                         StateOfOrigin = user.StateOfOrigin,
                         JurassicAccount = user.JurassicAccount,
-                        ReporterClanci = clanci,
+                        Clanci = articles,
                         Ime = reporter.Ime,
                         Prezime = reporter.Prezime,
                         IsVerified = verified,
@@ -222,7 +262,46 @@ namespace NovinskaAgencija.services.AuthService
             if (user.Role == Role.Reporter)
             {
                 Reporter reporter = context.Reporteri.Where(r => r.User == user).FirstOrDefault();
-                var clanci = context.Clanci.Where(c => c.ReporterId == reporter.Id).ToList();
+                var article = context.Clanci.Include(c => c.Oblast).Include(c => c.Reporter).Select(c => new
+                {
+                    c.Oblast.Name,
+                    c.Title,
+                    c.Content,
+                    c.Cena,
+                    c.PublishDate,
+                    c.ImageUrl,
+                    c.FileUrl,
+                    c.Reporter.Id,
+                    c.Reporter.Ime,
+                    c.Reporter.Prezime,
+                }).ToList();
+
+                List<ArticleResponse> articles = new List<ArticleResponse>();
+
+                if (article != null)
+                {
+                    foreach (var item in article)
+                    {
+                        articles.Add(new ArticleResponse
+                        {
+                            OblastName = item.Name,
+                            Title = item.Title,
+                            Content = item.Content,
+                            Cena = item.Cena,
+                            PublishDate = item.PublishDate,
+                            ImageUrl = item.ImageUrl,
+                            FileUrl = item.FileUrl,
+                            ReporterId = item.Id,
+                            ReporterIme = item.Ime,
+                            ReporterPrezime = item.Prezime
+                        });
+                    }
+                }
+                else
+                {
+                    articles = null;
+                }
+
                 return new OkObjectResult(new LoginReporterResponse
                 {
                     Username = user.Username,
@@ -231,7 +310,7 @@ namespace NovinskaAgencija.services.AuthService
                     Role = user.Role,
                     StateOfOrigin = user.StateOfOrigin,
                     JurassicAccount = user.JurassicAccount,
-                    ReporterClanci = clanci,
+                    Clanci = articles,
                     Ime = reporter.Ime,
                     Prezime = reporter.Prezime,
                     IsVerified = true,
