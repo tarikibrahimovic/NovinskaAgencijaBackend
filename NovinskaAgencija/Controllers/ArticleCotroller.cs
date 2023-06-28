@@ -47,12 +47,12 @@ namespace NovinskaAgencija.Controllers
             }
         }
 
-        [HttpDelete("deleteArticle/{articleId}/{userId}")]
-        public IActionResult DeleteArticle(int articleId, int userId)
+        [HttpDelete("deleteArticle/{articleId}")]
+        public IActionResult DeleteArticle(int articleId)
         {
             try
             {
-                var response = service.DeleteArticle(articleId, userId);
+                var response = service.DeleteArticle(articleId);
                 return response;
             }
             catch (Exception)
@@ -98,6 +98,48 @@ namespace NovinskaAgencija.Controllers
             try
             {
                 var response = service.GetArticle(articleId);
+                return response;
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Greska na serveru");
+            }
+        }
+
+        [HttpGet("usersArticles")]
+        public IActionResult GetUsersArticles()
+        {
+            try
+            {
+                var response = service.GetUsersArticles();
+                return response;
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Greska na serveru");
+            }
+        }
+
+        [HttpGet("boughtArticles")]
+        public IActionResult GetBoughtArticles()
+        {
+            try
+            {
+                var response = service.GetBoughtArticles();
+                return response;
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Greska na serveru");
+            }
+        }
+
+        [HttpGet("personalArticles/{articleId}")]
+        public IActionResult GetPersonalArticles(int articleId)
+        {
+            try
+            {
+                var response = service.GetPersonalArticles(articleId);
                 return response;
             }
             catch (Exception)

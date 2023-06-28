@@ -2,7 +2,6 @@
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using NovinskaAgencija.data.DTO.Article.request;
 using NovinskaAgencija.data.model;
 using NovinskaAgencija.services.AuthService;
@@ -141,38 +140,49 @@ namespace NovinskaAgencija.services.ArticleService
             return new OkObjectResult(articles);
         }
 
-        public IActionResult DeleteArticle(int articleId, int reporterId)
+        public IActionResult DeleteArticle(int articleId)
         {
             int userId = int.Parse(_acc.HttpContext.User.FindFirstValue(ClaimTypes.PrimarySid));
             User user = context.Users.FirstOrDefault(u => u.Id == userId);
             Reporter reporter = context.Reporteri.FirstOrDefault(r => r.UserId == userId);
-            if (reporter.Id != reporterId)
+            if (reporter != null)
             {
-                return new BadRequestObjectResult(new { error = "Niste autor ovog clanka" });
+                Placanje placanje = context.Placanja.FirstOrDefault(p => p.ClanakId == articleId);
+                if (placanje != null)
+                {
+                    return new BadRequestObjectResult(new { error = "Clanak je kupljen" });
+                }
+                Clanak clanak = context.Clanci.FirstOrDefault(c => c.Id == articleId && c.ReporterId == reporter.Id);
+                if (clanak == null)
+                {
+                    return new BadRequestObjectResult(new { error = "Clanak ne postoji" });
+                }
+                context.Clanci.Remove(clanak);
+                context.SaveChanges();
+                return new OkObjectResult(new { message = "Clanak uspesno obrisan" });
             }
-            Clanak clanak = context.Clanci.FirstOrDefault(c => c.Id == articleId);
-            if (reporter == null || user == null)
+            else
             {
-                return new BadRequestObjectResult(new { error = "Niste reporter" });
+                Klijent klijent = context.Klijenti.FirstOrDefault(k => k.UserId == userId);
+                if (klijent == null)
+                {
+                    return new BadRequestObjectResult(new { error = "Niste klijent" });
+                }
+                Placanje placanje = context.Placanja.FirstOrDefault(p => p.ClanakId == articleId && p.UserId == userId);
+                if (placanje == null)
+                {
+                    return new BadRequestObjectResult(new { error = "Niste kupili ovaj clanak" });
+                }
+                Clanak clanak = context.Clanci.FirstOrDefault(c => c.Id == articleId);
+                if (clanak == null)
+                {
+                    return new BadRequestObjectResult(new { error = "Clanak ne postoji" });
+                }
+                context.Clanci.Remove(clanak);
+                context.Placanja.Remove(placanje);
+                context.SaveChanges();
+                return new OkObjectResult(new { message = "Clanak uspesno obrisan" });
             }
-            if (clanak == null)
-            {
-                return new BadRequestObjectResult(new { error = "Clanak ne postoji" });
-            }
-            if (clanak.Reporter.Id != reporter.Id)
-            {
-                return new BadRequestObjectResult(new { error = "Niste autor ovog clanka" });
-            }
-
-            Placanje placanje = context.Placanja.FirstOrDefault(p => p.ClanakId == clanak.Id);
-            if (placanje != null)
-            {
-                return new BadRequestObjectResult(new { error = "Clanak je kupljen" });
-            }
-
-            context.Clanci.Remove(clanak);
-            context.SaveChanges();
-            return new OkObjectResult(new { message = "Clanak uspesno obrisan" });
         }
 
         public IActionResult BuyArticle(BuyArticleRequest request)
@@ -214,6 +224,11 @@ namespace NovinskaAgencija.services.ArticleService
             context.SaveChanges();
             authService.SendEmail(reporter.User.Email, "Your Article has been bought!");
 
+            if(clanak.FileUrl != null)
+            {
+                authService.SendEmail(user.Email, "You Bought an article! Here is the file that is with the file: " + clanak.FileUrl);
+            }
+
             return new OkObjectResult(new { message = "Article successfully bought!" });
         }
 
@@ -236,6 +251,67 @@ namespace NovinskaAgencija.services.ArticleService
             return new OkObjectResult(articles);
         }
 
+        public IActionResult GetPersonalArticles(int articleId)
+        {
+            int userId = int.Parse(_acc.HttpContext.User.FindFirstValue(ClaimTypes.PrimarySid));
+            User user = context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user == null)
+            {
+                return new BadRequestObjectResult(new { error = "Niste korisnik" });
+            }
+            Reporter reporter = context.Reporteri.FirstOrDefault(r => r.UserId == user.Id);
+            if(reporter != null)
+            {
+                var article = context.Clanci.Include(c => c.Oblast).Include(c => c.Reporter).Where(c => c.Id == articleId && c.ReporterId == reporter.Id).Select(c => new
+                {
+                    c.Id,
+                    c.Oblast.Name,
+                    c.Title,
+                    c.Content,
+                    c.Cena,
+                    c.PublishDate,
+                    c.ImageUrl,
+                    c.FileUrl,
+                    c.ReporterId,
+                    c.Reporter.Ime,
+                    c.Reporter.Prezime,
+                }).FirstOrDefault();
+
+                if(article == null)
+                {
+                    return new BadRequestObjectResult(new { error = "Nemate clanaka" });
+                }
+                return new OkObjectResult(article);
+            }
+            else
+            {
+                Klijent klijent = context.Klijenti.FirstOrDefault(k => k.UserId == user.Id);
+                if(klijent == null)
+                {
+                    return new BadRequestObjectResult(new { error = "Niste klijent" });
+                }
+                var article = context.Clanci.Include(c => c.Oblast).Include(c => c.Reporter).Include(c => c.Placanje).Where(c => c.Id == articleId && c.Placanje.UserId == userId).Select(c => new
+                {
+                    c.Id,
+                    c.Oblast.Name,
+                    c.Title,
+                    c.Content,
+                    c.Cena,
+                    c.PublishDate,
+                    c.ImageUrl,
+                    c.FileUrl,
+                    c.ReporterId,
+                    c.Reporter.Ime,
+                    c.Reporter.Prezime,
+                }).FirstOrDefault();
+                if(article == null)
+                {
+                    return new BadRequestObjectResult(new { error = "Nemate kupljenih clanaka" });
+                }
+                return new OkObjectResult(article);
+            }
+        }
+
         public IActionResult GetReporters()
         {
             var reporters = context.Reporteri.Include(r => r.User).Include(r => r.Clanak).Where(r => r.Clanak.Count > 0).Select(r => new
@@ -245,6 +321,46 @@ namespace NovinskaAgencija.services.ArticleService
                 r.Prezime,
             });
             return new OkObjectResult(reporters);
+        }
+
+        public IActionResult GetUsersArticles()
+        {
+            var userId = int.Parse(_acc.HttpContext.User.FindFirstValue(ClaimTypes.PrimarySid));
+            var articles = context.Clanci.Include(c => c.Oblast).Include(c => c.Reporter).Where(c => c.Reporter.UserId == userId).Select(c => new
+            {
+                c.Id,
+                c.Oblast.Name,
+                c.Title,
+                c.Content,
+                c.Cena,
+                c.PublishDate,
+                c.ImageUrl,
+                c.FileUrl,
+                c.ReporterId,
+                c.Reporter.Ime,
+                c.Reporter.Prezime,
+            }).ToList();
+            return new OkObjectResult(articles);
+        }
+
+        public IActionResult GetBoughtArticles()
+        {
+            var userId = int.Parse(_acc.HttpContext.User.FindFirstValue(ClaimTypes.PrimarySid));
+            var articles = context.Placanja.Include(p => p.Clanak).Include(p => p.User).Where(p => p.User.Id == userId).Select(p => new
+            {
+                p.Clanak.Id,
+                p.Clanak.Oblast.Name,
+                p.Clanak.Title,
+                p.Clanak.Content,
+                p.Clanak.Cena,
+                p.Clanak.PublishDate,
+                p.Clanak.ImageUrl,
+                p.Clanak.FileUrl,
+                p.Clanak.ReporterId,
+                p.Clanak.Reporter.Ime,
+                p.Clanak.Reporter.Prezime,
+            }).ToList();
+            return new OkObjectResult(articles);
         }
     }
 }

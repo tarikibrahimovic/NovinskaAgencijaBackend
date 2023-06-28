@@ -156,13 +156,37 @@ namespace NovinskaAgencija.services.AuthService
                 });
                 }
                 string token = _jwtService.CreateToken(user);
-            var placanje = context.Placanja.Where(p => p.User == user).ToList();
-            if (user.Role == Role.Reporter)
+                var placanje = context.Placanja.Where(p => p.User == user).Include(p => p.User).Select(p => new
                 {
-                    Reporter reporter = context.Reporteri.Where(r => r.User == user).FirstOrDefault();
-                //var clanci = context.ReporterClanak.Where(rc => rc.Reporter == reporter).ToList();
+                    p.Id,
+                    p.TransactionDate,
+                    p.ClanakId,
+                    p.UserId,
+                    p.User.Username,
+                    p.User.Email,
+                }).ToList();
+            List<PlacanjaResponse> placanja = new List<PlacanjaResponse>();
+            if (placanje != null)
+            {
+                foreach (var item in placanje)
+                {
+                    placanja.Add(new PlacanjaResponse
+                    {
+                        Id = item.Id,
+                        TransactionDate = item.TransactionDate,
+                        ClanakId = item.ClanakId,
+                        UserId = item.UserId,
+                        Username = item.Username,
+                        Email = item.Email,
+                    });
+                }
+            }
+                if (user.Role == Role.Reporter)
+                    {
+                        Reporter reporter = context.Reporteri.Where(r => r.User == user).FirstOrDefault();
                 var article = context.Clanci.Include(c => c.Oblast).Include(c => c.Reporter).Select(c => new
                 {
+                    c.Id,
                     c.Oblast.Name,
                     c.Title,
                     c.Content,
@@ -170,7 +194,7 @@ namespace NovinskaAgencija.services.AuthService
                     c.PublishDate,
                     c.ImageUrl,
                     c.FileUrl,
-                    c.Reporter.Id,
+                    ReporterId = c.Reporter.Id,
                     c.Reporter.Ime,
                     c.Reporter.Prezime,
                 }).ToList();
@@ -183,6 +207,7 @@ namespace NovinskaAgencija.services.AuthService
                     {
                         articles.Add(new ArticleResponse
                         {
+                            Id = item.Id,
                             OblastName = item.Name,
                             Title = item.Title,
                             Content = item.Content,
@@ -190,15 +215,11 @@ namespace NovinskaAgencija.services.AuthService
                             PublishDate = item.PublishDate,
                             ImageUrl = item.ImageUrl,
                             FileUrl = item.FileUrl,
-                            ReporterId = item.Id,
+                            ReporterId = item.ReporterId,
                             ReporterIme = item.Ime,
                             ReporterPrezime = item.Prezime
                         });
                     }
-                }
-                else
-                {
-                    articles = null;
                 }
                 return new OkObjectResult(new LoginReporterResponse
                     {
@@ -210,10 +231,11 @@ namespace NovinskaAgencija.services.AuthService
                         JurassicAccount = user.JurassicAccount,
                         Clanci = articles,
                         Ime = reporter.Ime,
+                        ImageUrl = user.ImageUrl,
                         Prezime = reporter.Prezime,
                         IsVerified = verified,
-                        Placanja = placanje
-                    });
+                        Placanja = placanja
+                });
                 }
                 if(user.Role == Role.Client)
                 {
@@ -224,9 +246,10 @@ namespace NovinskaAgencija.services.AuthService
                         Email = user.Email,
                         Token = token,
                         Role = user.Role,
-                        Placanje = placanje,
+                        Placanje = placanja,
                         StateOfOrigin = user.StateOfOrigin,
                         JurassicAccount = user.JurassicAccount,
+                        ImageUrl = user.ImageUrl,
                         NazivKompanije = klijent.NazivKompanije,
                         TipPreduzeca = klijent.TipPreduzeca,
                         IsVerified = verified
@@ -258,12 +281,38 @@ namespace NovinskaAgencija.services.AuthService
             context.SaveChanges();
 
             string token = _jwtService.CreateToken(user);
-            var placanje = context.Placanja.Where(p => p.User == user).ToList();
+            var placanje = context.Placanja.Where(p => p.User == user).Include(p => p.User).Select(p => new
+            {
+                p.Id,
+                p.TransactionDate,
+                p.ClanakId,
+                p.UserId,
+                p.User.Username,
+                p.User.Email,
+
+            }).ToList();
+            List<PlacanjaResponse> placanja = new List<PlacanjaResponse>();
+            if (placanje != null)
+            {
+                foreach (var item in placanje)
+                {
+                    placanja.Add(new PlacanjaResponse
+                    {
+                        Id = item.Id,
+                        TransactionDate = item.TransactionDate,
+                        ClanakId = item.ClanakId,
+                        UserId = item.UserId,
+                        Username = item.Username,
+                        Email = item.Email,
+                    });
+                }
+            }
             if (user.Role == Role.Reporter)
             {
                 Reporter reporter = context.Reporteri.Where(r => r.User == user).FirstOrDefault();
                 var article = context.Clanci.Include(c => c.Oblast).Include(c => c.Reporter).Select(c => new
                 {
+                    c.Id,
                     c.Oblast.Name,
                     c.Title,
                     c.Content,
@@ -271,7 +320,7 @@ namespace NovinskaAgencija.services.AuthService
                     c.PublishDate,
                     c.ImageUrl,
                     c.FileUrl,
-                    c.Reporter.Id,
+                    ReporterId = c.Reporter.Id,
                     c.Reporter.Ime,
                     c.Reporter.Prezime,
                 }).ToList();
@@ -284,6 +333,7 @@ namespace NovinskaAgencija.services.AuthService
                     {
                         articles.Add(new ArticleResponse
                         {
+                            Id = item.Id,
                             OblastName = item.Name,
                             Title = item.Title,
                             Content = item.Content,
@@ -291,15 +341,11 @@ namespace NovinskaAgencija.services.AuthService
                             PublishDate = item.PublishDate,
                             ImageUrl = item.ImageUrl,
                             FileUrl = item.FileUrl,
-                            ReporterId = item.Id,
+                            ReporterId = item.ReporterId,
                             ReporterIme = item.Ime,
                             ReporterPrezime = item.Prezime
                         });
                     }
-                }
-                else
-                {
-                    articles = null;
                 }
 
                 return new OkObjectResult(new LoginReporterResponse
@@ -312,9 +358,10 @@ namespace NovinskaAgencija.services.AuthService
                     JurassicAccount = user.JurassicAccount,
                     Clanci = articles,
                     Ime = reporter.Ime,
+                    ImageUrl = user.ImageUrl,
                     Prezime = reporter.Prezime,
                     IsVerified = true,
-                    Placanja = placanje
+                    Placanja = placanja
                 });
             }
             else
@@ -326,8 +373,9 @@ namespace NovinskaAgencija.services.AuthService
                     Email = user.Email,
                     Token = token,
                     Role = user.Role,
-                    Placanje = placanje,
+                    Placanje = placanja,
                     StateOfOrigin = user.StateOfOrigin,
+                    ImageUrl = user.ImageUrl,
                     JurassicAccount = user.JurassicAccount,
                     NazivKompanije = klijent.NazivKompanije,
                     TipPreduzeca = klijent.TipPreduzeca,

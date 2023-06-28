@@ -75,7 +75,7 @@ namespace NovinskaAgencija.Controllers
             }
         }
 
-        [HttpDelete("deleteProfile")]
+        [HttpPost("deleteProfile")]
         public IActionResult DeleteProfile([FromBody] DeleteProfileRequest request)
         {
             try

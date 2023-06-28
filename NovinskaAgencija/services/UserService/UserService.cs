@@ -99,22 +99,29 @@ namespace NovinskaAgencija.services.UserService
                 var userId = int.Parse(_acc.HttpContext.User.FindFirstValue(ClaimTypes.PrimarySid));
                 User user = context.Users.FirstOrDefault(u => u.Id == userId);
 
+                if(user == null)
+                {
+                    return new BadRequestObjectResult(new { message = "User not found" });
+                }
+
                 var filePath = Path.GetTempFileName();
 
                 using (var stream = System.IO.File.Create(filePath))
                 {
                     request.ProfilePicture.CopyTo(stream);
                 }
-                var profilePicturePublicId = $"{_configuration.GetSection("Cloudinary:ProfilePicsFolderName").Value}/user{userId}_profile-picture";
+                var guid = Guid.NewGuid().ToString();
+                var profilePicturePublicId = $"{_configuration.GetSection("Cloudinary:ProfilePicsFolderName").Value}/user{guid}_profile-picture";
                 var uploadParams = new ImageUploadParams()
                 {
                     File = new FileDescription(filePath),
                     PublicId = profilePicturePublicId,
                 };
                 var uploadResult = cloudinary.Upload(uploadParams);
+
                 user.ImageUrl = uploadResult.Url.ToString();
                 context.SaveChanges();
-                return new OkObjectResult(new { pictureUrl = uploadResult.Url });
+                return new OkObjectResult(new { pictureUrl = uploadResult.Url, user= user });
             }
             catch (Exception ex)
             {
@@ -192,13 +199,38 @@ namespace NovinskaAgencija.services.UserService
                     return new BadRequestObjectResult(new { error = "User with this email doesn't exist" });
                 }
                 string token = jwtService.CreateToken(user);
-                var placanje = context.Placanja.Where(p => p.User == user).ToList();
+                var placanje = context.Placanja.Where(p => p.User == user).Include(p => p.User).Select(p => new
+                {
+                    p.Id,
+                    p.TransactionDate,
+                    p.ClanakId,
+                    p.UserId,
+                    p.User.Username,
+                    p.User.Email,
+                }).ToList();
+                List<PlacanjaResponse> placanja = new List<PlacanjaResponse>();
+                if (placanje != null)
+                {
+                    foreach (var item in placanje)
+                    {
+                        placanja.Add(new PlacanjaResponse
+                        {
+                            Id = item.Id,
+                            TransactionDate = item.TransactionDate,
+                            ClanakId = item.ClanakId,
+                            UserId = item.UserId,
+                            Username = item.Username,
+                            Email = item.Email,
+                        });
+                    }
+                }
+
                 if (user.Role == data.model.Role.Reporter)
                 {
                     Reporter reporter = context.Reporteri.Where(r => r.User == user).FirstOrDefault();
-                    //var clanci = context.ReporterClanak.Where(rc => rc.Reporter == reporter).ToList();
                     var article = context.Clanci.Include(c => c.Oblast).Include(c => c.Reporter).Select(c => new
                     {
+                        c.Id,
                         c.Oblast.Name,
                         c.Title,
                         c.Content,
@@ -206,7 +238,7 @@ namespace NovinskaAgencija.services.UserService
                         c.PublishDate,
                         c.ImageUrl,
                         c.FileUrl,
-                        c.Reporter.Id,
+                        ReporterId = c.Reporter.Id,
                         c.Reporter.Ime,
                         c.Reporter.Prezime,
                     }).ToList();
@@ -219,6 +251,7 @@ namespace NovinskaAgencija.services.UserService
                         {
                             articles.Add(new ArticleResponse
                             {
+                                Id = item.Id,
                                 OblastName = item.Name,
                                 Title = item.Title,
                                 Content = item.Content,
@@ -226,15 +259,11 @@ namespace NovinskaAgencija.services.UserService
                                 PublishDate = item.PublishDate,
                                 ImageUrl = item.ImageUrl,
                                 FileUrl = item.FileUrl,
-                                ReporterId = item.Id,
+                                ReporterId = item.ReporterId,
                                 ReporterIme = item.Ime,
                                 ReporterPrezime = item.Prezime
                             });
                         }
-                    }
-                    else
-                    {
-                        articles = null;
                     }
                     return new OkObjectResult(new LoginReporterResponse
                     {
@@ -246,9 +275,10 @@ namespace NovinskaAgencija.services.UserService
                         JurassicAccount = user.JurassicAccount,
                         Clanci = articles,
                         Ime = reporter.Ime,
+                        ImageUrl = user.ImageUrl,
                         Prezime = reporter.Prezime,
                         IsVerified = verified,
-                        Placanja = placanje
+                        Placanja = placanja
                     });
                 }
                 if (user.Role == data.model.Role.Client)
@@ -260,10 +290,11 @@ namespace NovinskaAgencija.services.UserService
                         Email = user.Email,
                         Token = token,
                         Role = user.Role,
-                        Placanje = placanje,
+                        Placanje = placanja,
                         StateOfOrigin = user.StateOfOrigin,
                         JurassicAccount = user.JurassicAccount,
                         NazivKompanije = klijent.NazivKompanije,
+                        ImageUrl = user.ImageUrl,
                         TipPreduzeca = klijent.TipPreduzeca,
                         IsVerified = verified
                     });

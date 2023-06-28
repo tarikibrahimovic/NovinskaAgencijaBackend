@@ -12,7 +12,7 @@ namespace NovinskaAgencija.data.DTO.Auth.response
         public string StateOfOrigin { get; set; } = string.Empty;
         public string JurassicAccount { get; set; } = string.Empty;
         public List<ArticleResponse> Clanci { get; set; }
-        public ICollection<Placanje> Placanja { get; set; }
+        public List<PlacanjaResponse> Placanja { get; set; }
         public string Token { get; set; } = string.Empty;
         public string Ime { get; set; } = string.Empty;
         public string Prezime { get; set; } = string.Empty;
