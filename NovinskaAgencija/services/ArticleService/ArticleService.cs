@@ -289,7 +289,28 @@ namespace NovinskaAgencija.services.ArticleService
 
                 if(article == null)
                 {
-                    return new BadRequestObjectResult(new { error = "Nemate clanaka" });
+                    var articleBought = context.Clanci.Include(c => c.Oblast).Include(c => c.Reporter).Include(c => c.Placanje).Where(c => c.Id == articleId && c.Placanje.UserId == userId).Select(c => new
+                    {
+                        c.Id,
+                        c.Oblast.Name,
+                        c.Title,
+                        c.Content,
+                        c.Cena,
+                        c.PublishDate,
+                        c.ImageUrl,
+                        c.FileUrl,
+                        c.ReporterId,
+                        c.Reporter.Ime,
+                        c.Reporter.Prezime,
+                    }).FirstOrDefault();
+                    if(articleBought == null)
+                    {
+                        return new BadRequestObjectResult(new { error = "Nemate clanaka" });
+                    }
+                    else
+                    {
+                        return new OkObjectResult(articleBought);
+                    }
                 }
                 return new OkObjectResult(article);
             }
