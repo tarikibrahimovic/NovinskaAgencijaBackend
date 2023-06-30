@@ -175,14 +175,14 @@ namespace NovinskaAgencija.services.UserService
                 {
                     return new BadRequestObjectResult("Wrong password");
                 }
-                context.Users.Remove(user);
+                user.IsActive = false;
                 context.SaveChanges();
                 return new OkObjectResult(new { message = "Profile deleted" });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
-                return new BadRequestObjectResult(new { message = "Something went wrong" });
+                return new BadRequestObjectResult(new { message = ex.ToString() });
             }
 
         }
@@ -194,7 +194,7 @@ namespace NovinskaAgencija.services.UserService
                 int userId = int.Parse(_acc.HttpContext.User.FindFirstValue(ClaimTypes.PrimarySid));
                 User user = context.Users.Where(u => u.Id == userId).FirstOrDefault();
                 bool verified = user.VerificationToken != null ? false : true;
-                if (user == null)
+                if (user == null || user.IsActive == false)
                 {
                     return new BadRequestObjectResult(new { error = "User with this email doesn't exist" });
                 }

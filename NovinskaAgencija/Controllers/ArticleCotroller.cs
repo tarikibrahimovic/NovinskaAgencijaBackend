@@ -55,7 +55,7 @@ namespace NovinskaAgencija.Controllers
                 var response = service.DeleteArticle(articleId);
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "Greska na serveru");
             }
@@ -69,10 +69,11 @@ namespace NovinskaAgencija.Controllers
                 var response = service.BuyArticle(request);
                 return response;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
-                return StatusCode(StatusCodes.Status500InternalServerError, "Greska na serveru");
+                //return StatusCode(StatusCodes.Status500InternalServerError, "Greska na serveru");
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
 

@@ -9,13 +9,11 @@
         public int Cena { get; set; }
         public string? FileUrl { get; set; } = string.Empty;
         public DateTime PublishDate { get; set; }
-        //public ICollection<ClanakOblast> ClanakOblasti { get; set; }
-        //public ICollection<ReporterClanak> ReporterClanak { get; set; }
         public int OblastId { get; set; }
         public Oblast Oblast { get; set; }
-        public int ReporterId { get; set; }
-        public Reporter Reporter { get; set; }
-        public Placanje Placanje { get; set; }
+        public int? ReporterId { get; set; }
+        public Reporter? Reporter { get; set; }
+        public Placanje? Placanje { get; set; }
 
     }
 }

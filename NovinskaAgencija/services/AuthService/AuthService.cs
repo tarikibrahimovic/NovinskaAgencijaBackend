@@ -70,6 +70,7 @@ namespace NovinskaAgencija.services.AuthService
             user.PassswordSalt = passwordSalt;
             user.StateOfOrigin = request.StateOfOrigin;
             user.JurassicAccount = request.JurassicAccount;
+            user.IsActive = true;
             user.Role = Role.Reporter;
 
             Random random = new Random();
@@ -102,6 +103,7 @@ namespace NovinskaAgencija.services.AuthService
             CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
 
             User user = new User();
+            user.IsActive = true;
             user.Username = request.Username;
             user.Email = request.Email;
             user.PasswordHash = passwordHash;
@@ -134,11 +136,11 @@ namespace NovinskaAgencija.services.AuthService
         public IActionResult Login(LoginRequest request)
         {
                 User user = context.Users.Where(u => u.Email == request.Email).FirstOrDefault();
-                bool verified = user.VerificationToken != null ? false : true;
-                if (user == null)
+                if (user == null || user.IsActive == false)
                 {
                     return new BadRequestObjectResult(new {error = "User with this email doesn't exist" });
                 }
+                bool verified = user.VerificationToken != null ? false : true;
                 if(!VerifyPasswordHash(request.Password, user.PasswordHash, user.PassswordSalt))
                 {
                     return new BadRequestObjectResult(new {error = "Wrong password" });
@@ -269,7 +271,7 @@ namespace NovinskaAgencija.services.AuthService
         public IActionResult Verify(VerifyRequest request)
         {
             User user = context.Users.Where(u => u.Email == request.Email).FirstOrDefault();
-            if (user == null)
+            if (user == null || user.IsActive == false)
             {
                 return new BadRequestObjectResult(new {error = "User with this email doesn't exist" });
             }
@@ -387,7 +389,7 @@ namespace NovinskaAgencija.services.AuthService
         public IActionResult ForgotPassword(ForgotPasswordRequest request)
         {
             User user = context.Users.Where(u => u.Email == request.Email).FirstOrDefault();
-            if (user == null)
+            if (user == null || user.IsActive == false)
             {
                 return new BadRequestObjectResult(new { error = "User with this email doesn't exist" });
             }
@@ -405,7 +407,7 @@ namespace NovinskaAgencija.services.AuthService
         public IActionResult ResetPassword(ResetPasswordRequest request)
         {
             User user = context.Users.Where(u => u.Email == request.Email).FirstOrDefault();
-            if (user == null)
+            if (user == null || user.IsActive == false)
             {
                 return new BadRequestObjectResult(new { error = "User with this email doesn't exist" });
             }

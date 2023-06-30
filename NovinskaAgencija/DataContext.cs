@@ -40,10 +40,8 @@ namespace NovinskaAgencija
 
         public DbSet<User> Users { get; set; }
         public DbSet<Clanak> Clanci { get; set; }
-        //public DbSet<ReporterClanak> ReporterClanak { get; set; }
         public DbSet<Placanje> Placanja { get; set; }
         public DbSet<Oblast> Oblasti { get; set; }
-        //public DbSet<ClanakOblast> ClanakOblast { get; set; }
         public DbSet<Reporter> Reporteri { get; set; }
         public DbSet<Klijent> Klijenti { get; set; }
     }

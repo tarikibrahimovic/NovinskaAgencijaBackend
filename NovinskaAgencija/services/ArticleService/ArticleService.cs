@@ -198,8 +198,17 @@ namespace NovinskaAgencija.services.ArticleService
                 return new BadRequestObjectResult(new { error = "Pogresan bankovni racun" });
             }
             Clanak clanak = context.Clanci.FirstOrDefault(c => c.Id == request.ArticleId);
+
+            Reporter reporterUser = context.Reporteri.FirstOrDefault(r => r.UserId == userId);
+            if (reporterUser != null)
+            {
+                if(clanak.ReporterId == reporterUser.Id)
+                {
+                    return new BadRequestObjectResult(new { error = "Ne mozete kupiti svoj clanak" });
+                }
+            }
             Reporter reporter = context.Reporteri.FirstOrDefault(r => r.Id == clanak.ReporterId);
-            
+
             Placanje placanjeProvera = context.Placanja.FirstOrDefault(p => p.Clanak.Id == clanak.Id && p.User.Id == user.Id);
             if (placanjeProvera != null)
             {
@@ -222,7 +231,8 @@ namespace NovinskaAgencija.services.ArticleService
             };
             context.Placanja.Add(placanje);
             context.SaveChanges();
-            authService.SendEmail(reporter.User.Email, "Your Article has been bought!");
+            User userReporter = context.Users.FirstOrDefault(u => u.Id == reporter.UserId);
+            authService.SendEmail(userReporter.Email, "Your Article has been bought!");
 
             if(clanak.FileUrl != null)
             {
